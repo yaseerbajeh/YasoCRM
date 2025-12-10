@@ -161,9 +161,20 @@ class EvolutionApiService
     }
 
     /**
+     * Fetch all contacts from WhatsApp
+     */
+    public function fetchContacts(string $instanceName): array
+    {
+        $response = $this->makeRequest('GET', "/chat/findContacts/{$instanceName}");
+        $data = $response->json();
+        
+        return $data ?? [];
+    }
+
+    /**
      * Make HTTP request to Evolution API
      */
-    private function makeRequest(string $method, string $endpoint, array $data = []): Response
+    public function makeRequest(string $method, string $endpoint, array $data = []): Response
     {
         $url = $this->baseUrl . $endpoint;
 
@@ -174,6 +185,7 @@ class EvolutionApiService
         ]);
 
         $response = Http::timeout($this->timeout)
+            ->withoutVerifying()  // Disable SSL verification for development
             ->withHeaders([
                 'apikey' => $this->globalApiKey,
                 'Content-Type' => 'application/json',

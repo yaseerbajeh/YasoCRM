@@ -25,6 +25,8 @@ Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
 // Webhook routes (no auth required)
 Route::post('/webhook/evolution/{instanceName}', [WebhookController::class, 'handleEvolutionWebhook']);
+Route::post('/webhook/simple/{instanceName}', [\App\Http\Controllers\SimpleWebhookController::class, 'handleWebhook']);
+
 
 // Test routes (no auth required - for testing database)
 Route::get('/test/debug', function() {
@@ -41,6 +43,35 @@ Route::get('/test/debug', function() {
         return response()->json(['error' => $e->getMessage()], 500);
     }
 });
+Route::get('/test/insert-contact', function() {
+    try {
+        $contact = \App\Models\Contact::create([
+            'organization_id' => 1,
+            'phone_number' => '966501234567',
+            'name' => 'Direct Test Contact'
+        ]);
+        return response()->json(['success' => true, 'contact' => $contact]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+Route::get('/test/evolution-config', function() {
+    return response()->json([
+        'EVOLUTION_API_URL' => env('EVOLUTION_API_URL'),
+        'EVOLUTION_API_GLOBAL_KEY' => env('EVOLUTION_API_GLOBAL_KEY') ? 'SET' : 'NOT SET',
+        'EVOLUTION_DEFAULT_INSTANCE' => env('EVOLUTION_DEFAULT_INSTANCE'),
+        'config_base_url' => config('evolution.base_url'),
+        'config_api_key' => config('evolution.global_api_key') ? 'SET' : 'NOT SET',
+    ]);
+});
+// Evolution API test routes
+Route::get('/test/list-instances', [\App\Http\Controllers\EvolutionTestController::class, 'listInstances']);
+Route::post('/test/create-instance', [\App\Http\Controllers\EvolutionTestController::class, 'createInstance']);
+Route::get('/test/evolution-status', [\App\Http\Controllers\EvolutionTestController::class, 'getStatus']);
+Route::get('/test/evolution-qr', [\App\Http\Controllers\EvolutionTestController::class, 'getQRCode']);
+Route::post('/test/sync-contacts', [\App\Http\Controllers\EvolutionTestController::class, 'syncContacts']);
+Route::post('/test/send-whatsapp', [\App\Http\Controllers\EvolutionTestController::class, 'sendMessage']);
+Route::post('/test/set-webhook', [\App\Http\Controllers\EvolutionTestController::class, 'setWebhook']);
 Route::get('/test/contacts', [\App\Http\Controllers\TestContactController::class, 'index']);
 Route::post('/test/contacts', [\App\Http\Controllers\TestContactController::class, 'store']);
 Route::get('/test/messages/{contactId}', [\App\Http\Controllers\TestMessageController::class, 'index']);
