@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Search, MoreVertical, Smile, Paperclip, Send, CheckCheck } from 'lucide-react';
-import { useWebSocket } from '@/lib/websocket';
-import { api } from '@/lib/api';
+import axios from 'axios';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 interface Contact {
   id: number;
@@ -35,63 +36,34 @@ const quickReplies = [
 export default function ConversationPanel({ contact }: ConversationPanelProps) {
   const [messageText, setMessageText] = useState('');
   const [showQuickReplies, setShowQuickReplies] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      sender: 'contact',
-      text: 'مرحباً، أود المساعدة بخصوص طلبي رقم #12034.',
-      time: '10:35 ص',
-    },
-    {
-      id: 2,
-      sender: 'agent',
-      text: 'أهلاً بكِ فاطمة، سأقوم بالتحقق من حالة الطلب الآن.',
-      time: '10:36 ص',
-      read: true,
-    },
-    {
-      id: 3,
-      sender: 'contact',
-      text: 'تمام، شكرًا جزيلاً لك على المساعدة!',
-      time: '10:42 ص',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { echo } = useWebSocket();
 
-  // Scroll to bottom when messages change
+  // Load messages from database when contact changes
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (!contact.id) return;
 
-  // Subscribe to WebSocket channel for this contact
-  useEffect(() => {
-    if (!echo || !contact.id) return;
-
-    const channel = echo.channel(`conversation.${contact.id}`);
-
-    channel.listen('MessageSent', (data: any) => {
-      const newMessage: Message = {
-        id: data.id || Date.now(),
-        sender: data.sender === 'agent' ? 'agent' : 'contact',
-        text: data.message || data.text,
-        time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-        read: false,
-      };
-
-      setMessages((prev) => [...prev, newMessage]);
-    });
-
-    return () => {
-      channel.stopListening('MessageSent');
+    const loadMessages = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(`${API_URL}/api/test/messages/${contact.id}`);
+        setMessages(response.data);
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-  }, [echo, contact.id]);
+
+    loadMessages();
+  }, [contact.id]);
 
   const handleSend = async () => {
     if (!messageText.trim()) return;
 
-    const newMessage: Message = {
+    const tempMessage: Message = {
       id: Date.now(),
       sender: 'agent',
       text: messageText,
@@ -99,20 +71,32 @@ export default function ConversationPanel({ contact }: ConversationPanelProps) {
       read: false,
     };
 
-    // Add message to local state immediately
-    setMessages((prev) => [...prev, newMessage]);
+    // Add message to local state immediately for instant feedback
+    setMessages((prev) => [...prev, tempMessage]);
+    const currentMessage = messageText;
     setMessageText('');
 
-    // Send message to backend via API
+    // Save message to database
     try {
-      await api.messages.send({
+      const response = await axios.post(`${API_URL}/api/test/messages`, {
         contact_id: contact.id,
-        message: messageText,
-        type: 'text',
+        message: currentMessage,
+        sender: 'agent',
       });
+
+      // Update with the real message from database
+      if (response.data.success) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === tempMessage.id ? response.data.message : msg
+          )
+        );
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
-      // Optionally show error to user
+      // Remove the temp message if it failed
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempMessage.id));
+      setMessageText(currentMessage); // Restore the message text
     }
   };
 
@@ -143,41 +127,51 @@ export default function ConversationPanel({ contact }: ConversationPanelProps) {
         </div>
       </header>
 
-      <div className="flex-1 space-y-6 overflow-y-auto p-6">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex items-end gap-3 ${message.sender === 'agent' ? 'justify-end' : 'justify-start'
-              }`}
-          >
+      <div className="max-h-[60vh] space-y-6 overflow-y-auto p-6">
+        {loading ? (
+          <div className="flex items-center justify-center p-12 text-slate-500">
+            جاري تحميل الرسائل...
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex items-center justify-center p-12 text-slate-500">
+            لا توجد رسائل. ابدأ المحادثة!
+          </div>
+        ) : (
+          messages.map((message) => (
             <div
-              className={`flex flex-col gap-1 ${message.sender === 'agent' ? 'items-end' : 'items-start'
+              key={message.id}
+              className={`flex items-end gap-3 ${message.sender === 'agent' ? 'justify-end' : 'justify-start'
                 }`}
             >
-              <p
-                className={`max-w-md rounded-xl px-4 py-3 text-base ${message.sender === 'agent'
-                    ? 'rounded-bl-none bg-blue-600 text-white'
-                    : 'rounded-br-none bg-white text-slate-900'
+              <div
+                className={`flex flex-col gap-1 ${message.sender === 'agent' ? 'items-end' : 'items-start'
                   }`}
               >
-                {message.text}
-              </p>
+                <p
+                  className={`max-w-md rounded-xl px-4 py-3 text-base ${message.sender === 'agent'
+                      ? 'rounded-bl-none bg-blue-600 text-white'
+                      : 'rounded-br-none bg-white text-slate-900'
+                    }`}
+                >
+                  {message.text}
+                </p>
 
-              <div className="flex items-center gap-1 px-1">
-                <span className="text-xs text-slate-400">{message.time}</span>
-                {message.sender === 'agent' && message.read && (
-                  <CheckCheck className="size-4 text-blue-600" />
-                )}
+                <div className="flex items-center gap-1 px-1">
+                  <span className="text-xs text-slate-400">{message.time}</span>
+                  {message.sender === 'agent' && message.read && (
+                    <CheckCheck className="size-4 text-blue-600" />
+                  )}
+                </div>
               </div>
+
+              {message.sender === 'agent' && (
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
+                  <span className="text-xs font-bold text-white">م</span>
+                </div>
+              )}
             </div>
-
-            {message.sender === 'agent' && (
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
-                <span className="text-xs font-bold text-white">م</span>
-              </div>
-            )}
-          </div>
-        ))}
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -224,7 +218,8 @@ export default function ConversationPanel({ contact }: ConversationPanelProps) {
 
           <button
             onClick={handleSend}
-            className="flex h-12 shrink-0 items-center justify-center rounded-lg bg-blue-600 px-6 text-sm font-bold text-white transition-colors hover:bg-blue-700"
+            disabled={!messageText.trim()}
+            className="flex h-12 shrink-0 items-center justify-center rounded-lg bg-blue-600 px-6 text-sm font-bold text-white transition-colors hover:bg-blue-700 disabled:bg-blue-300"
           >
             إرسال
           </button>

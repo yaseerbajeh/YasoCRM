@@ -26,6 +26,29 @@ Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 // Webhook routes (no auth required)
 Route::post('/webhook/evolution/{instanceName}', [WebhookController::class, 'handleEvolutionWebhook']);
 
+// Test routes (no auth required - for testing database)
+Route::get('/test/debug', function() {
+    try {
+        $dbConnected = DB::connection()->getPdo() ? 'Connected' : 'Not Connected';
+        $contactsCount = DB::table('contacts')->count();
+        return response()->json([
+            'database' => $dbConnected,
+            'contacts_count' => $contactsCount,
+            'php_version' => PHP_VERSION,
+            'laravel_version' => app()->version(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+Route::get('/test/contacts', [\App\Http\Controllers\TestContactController::class, 'index']);
+Route::post('/test/contacts', [\App\Http\Controllers\TestContactController::class, 'store']);
+Route::get('/test/messages/{contactId}', [\App\Http\Controllers\TestMessageController::class, 'index']);
+Route::post('/test/messages', [\App\Http\Controllers\TestMessageController::class, 'store']);
+
+
+
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth
