@@ -8,10 +8,10 @@ interface Contact {
     id: number;
     name: string | null;
     phone_number: string;
-    email: string | null;
+    email?: string | null;
     avatar_url: string | null;
-    custom_fields: Record<string, unknown> | null;
-    created_at: string;
+    custom_fields?: Record<string, unknown> | null;
+    created_at?: string;
 }
 
 interface Conversation {
