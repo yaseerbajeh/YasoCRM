@@ -8,9 +8,9 @@ interface Contact {
     id: number;
     name: string | null;
     phone_number: string;
-    email: string | null;
-    avatar_url: string | null;
-    created_at: string;
+    email?: string | null;
+    avatar_url?: string | null;
+    created_at?: string;
     tags?: string[];
 }
 
@@ -174,7 +174,7 @@ export default function ContactsPage() {
                                     </td>
                                     <td className="px-6 py-4 text-gray-600 dir-ltr text-right">{contact.phone_number}</td>
                                     <td className="px-6 py-4 text-gray-600">{contact.email || '-'}</td>
-                                    <td className="px-6 py-4 text-gray-500 text-sm">{formatDate(contact.created_at)}</td>
+                                    <td className="px-6 py-4 text-gray-500 text-sm">{formatDate(contact.created_at || '')}</td>
                                     <td className="px-6 py-4 text-left relative">
                                         <button
                                             onClick={() => setActiveMenu(activeMenu === contact.id ? null : contact.id)}
