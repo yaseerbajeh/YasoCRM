@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\BroadcastController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\SyncController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\WebhookController;
@@ -77,8 +80,37 @@ Route::post('/test/contacts', [\App\Http\Controllers\TestContactController::clas
 Route::get('/test/messages/{contactId}', [\App\Http\Controllers\TestMessageController::class, 'index']);
 Route::post('/test/messages', [\App\Http\Controllers\TestMessageController::class, 'store']);
 
-
-
+// ============================================
+// PUBLIC ROUTES FOR DEVELOPMENT (no auth required)
+// Remove or protect these in production!
+// ============================================
+Route::prefix('dev')->group(function () {
+    // Quick test routes
+    Route::get('/ping', [\App\Http\Controllers\DevController::class, 'ping']);
+    Route::get('/db-test', [\App\Http\Controllers\DevController::class, 'dbTest']);
+    Route::get('/test-chats', [\App\Http\Controllers\DevController::class, 'testChats']);
+    Route::get('/test-messages', [\App\Http\Controllers\DevController::class, 'testMessages']);
+    Route::get('/generate-conversations', [\App\Http\Controllers\DevController::class, 'generateConversations']);
+    Route::get('/setup-webhook', [\App\Http\Controllers\DevController::class, 'setupWebhook']);
+    
+    // Use DevController which doesn't require authentication
+    Route::get('/conversations', [\App\Http\Controllers\DevController::class, 'conversations']);
+    Route::get('/conversations/{id}', [\App\Http\Controllers\DevController::class, 'conversation']);
+    Route::get('/messages/{conversationId}', [\App\Http\Controllers\DevController::class, 'messages']);
+    Route::post('/messages', [\App\Http\Controllers\DevController::class, 'sendMessage']);
+    Route::get('/contacts', [\App\Http\Controllers\DevController::class, 'contacts']);
+    Route::get('/contacts/{id}', [\App\Http\Controllers\DevController::class, 'contact']);
+    Route::get('/analytics/summary', [\App\Http\Controllers\DevController::class, 'analyticsSummary']);
+    Route::get('/analytics/conversations', [\App\Http\Controllers\DevController::class, 'analyticsConversations']);
+    Route::get('/analytics/activities', [\App\Http\Controllers\DevController::class, 'analyticsActivities']);
+    Route::get('/automations', [\App\Http\Controllers\DevController::class, 'automations']);
+    Route::get('/broadcasts', [\App\Http\Controllers\DevController::class, 'broadcasts']);
+    
+    // Sync routes
+    Route::post('/sync', [\App\Http\Controllers\DevController::class, 'triggerSync']);
+    Route::get('/sync', [\App\Http\Controllers\DevController::class, 'triggerSync']); // Also allow GET for easy browser testing
+    Route::get('/evolution-status', [\App\Http\Controllers\DevController::class, 'evolutionStatus']);
+});
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -132,4 +164,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/whatsapp-instances/{id}/qr', [WhatsappInstanceController::class, 'getQRCode']);
     Route::get('/whatsapp-instances/{id}/status', [WhatsappInstanceController::class, 'getStatus']);
     Route::delete('/whatsapp-instances/{id}', [WhatsappInstanceController::class, 'destroy']);
+
+    // Automations
+    Route::get('/automations', [AutomationController::class, 'index']);
+    Route::post('/automations', [AutomationController::class, 'store']);
+    Route::get('/automations/{id}', [AutomationController::class, 'show']);
+    Route::put('/automations/{id}', [AutomationController::class, 'update']);
+    Route::patch('/automations/{id}/toggle', [AutomationController::class, 'toggle']);
+    Route::delete('/automations/{id}', [AutomationController::class, 'destroy']);
+
+    // Analytics
+    Route::get('/analytics/summary', [AnalyticsController::class, 'summary']);
+    Route::get('/analytics/conversations', [AnalyticsController::class, 'conversations']);
+    Route::get('/analytics/messages', [AnalyticsController::class, 'messages']);
+    Route::get('/analytics/activities', [AnalyticsController::class, 'activities']);
+
+    // Sync
+    Route::post('/sync/trigger', [SyncController::class, 'trigger']);
+    Route::get('/sync/status', [SyncController::class, 'status']);
+    Route::post('/sync/contacts', [SyncController::class, 'syncContacts']);
+
+    // User Profile
+    Route::put('/users/me', [AuthController::class, 'updateProfile']);
 });

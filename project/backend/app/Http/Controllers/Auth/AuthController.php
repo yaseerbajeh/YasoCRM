@@ -143,4 +143,26 @@ class AuthController extends Controller
             'message' => 'Password has been reset successfully.',
         ]);
     }
+
+    /**
+     * Update user profile
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
+            'job_title' => 'sometimes|string|max:255',
+            'avatar_url' => 'sometimes|string|max:500',
+        ]);
+
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user->fresh()->load('organization'),
+        ]);
+    }
 }

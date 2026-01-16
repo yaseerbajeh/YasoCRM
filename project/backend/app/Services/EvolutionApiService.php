@@ -165,10 +165,20 @@ class EvolutionApiService
      */
     public function fetchContacts(string $instanceName): array
     {
-        $response = $this->makeRequest('GET', "/chat/findContacts/{$instanceName}");
+        // Evolution API v2 uses POST for findContacts
+        $response = $this->makeRequest('POST', "/chat/findContacts/{$instanceName}", []);
         $data = $response->json();
         
         return $data ?? [];
+    }
+
+    /**
+     * Fetch all instances
+     */
+    public function fetchInstances(): array
+    {
+        $response = $this->makeRequest('GET', '/instance/fetchInstances');
+        return $response->json() ?? [];
     }
 
     /**
