@@ -12,29 +12,7 @@ import {
     RefreshCw
 } from 'lucide-react';
 import { api, endpoints } from '@/lib/api';
-
-interface Message {
-    id: number;
-    content: string | null;
-    direction: 'incoming' | 'outgoing';
-    message_type: string;
-    is_read: boolean;
-    status: string;
-    created_at: string;
-}
-
-interface Contact {
-    id: number;
-    name: string | null;
-    phone_number: string;
-    avatar_url: string | null;
-}
-
-interface Conversation {
-    id: number;
-    contact: Contact;
-    status: string;
-}
+import { Contact, Conversation, Message } from '@/lib/types';
 
 interface ChatViewProps {
     conversation?: Conversation | null;

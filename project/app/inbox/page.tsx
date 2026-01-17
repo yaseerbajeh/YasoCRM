@@ -4,30 +4,7 @@ import { useState, useCallback } from 'react';
 import ConversationsList from '@/components/ConversationsList';
 import ChatView from '@/components/ChatView';
 import ContactDetails from '@/components/ContactDetails';
-
-interface Contact {
-    id: number;
-    name: string | null;
-    phone_number: string;
-    email?: string | null;
-    avatar_url: string | null;
-    custom_fields?: Record<string, unknown> | null;
-    created_at?: string;
-}
-
-interface Conversation {
-    id: number;
-    contact_id: number;
-    status: string;
-    unread_count: number;
-    last_message_at: string | null;
-    contact: Contact;
-    last_message?: {
-        content: string | null;
-        direction: string;
-        created_at: string;
-    };
-}
+import { Contact, Conversation } from '@/lib/types';
 
 export default function InboxPage() {
     const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);

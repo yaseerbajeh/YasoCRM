@@ -3,22 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, Calendar, Phone, Mail, Tag, DollarSign, Briefcase, Save, RefreshCw } from 'lucide-react';
 import { api, endpoints } from '@/lib/api';
-
-interface Contact {
-    id: number;
-    name: string | null;
-    phone_number: string;
-    email?: string | null;
-    avatar_url: string | null;
-    custom_fields?: Record<string, unknown> | null;
-    created_at?: string;
-}
-
-interface Conversation {
-    id: number;
-    contact: Contact;
-    status: string;
-}
+import { Contact, Conversation } from '@/lib/types';
 
 interface ContactDetailsProps {
     conversation?: Conversation | null;

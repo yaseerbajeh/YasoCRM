@@ -3,27 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, RefreshCw } from 'lucide-react';
 import { api, endpoints } from '@/lib/api';
-
-interface Contact {
-    id: number;
-    name: string | null;
-    phone_number: string;
-    avatar_url: string | null;
-}
-
-interface Conversation {
-    id: number;
-    contact_id: number;
-    status: string;
-    unread_count: number;
-    last_message_at: string | null;
-    contact: Contact;
-    last_message?: {
-        content: string | null;
-        direction: string;
-        created_at: string;
-    };
-}
+import { Contact, Conversation } from '@/lib/types';
 
 interface ConversationsListProps {
     onSelectConversation?: (conversation: Conversation) => void;
@@ -147,7 +127,7 @@ export default function ConversationsList({ onSelectConversation, selectedId }: 
                                         {getDisplayName(conv)}
                                     </h3>
                                     <span className="text-[10px] text-gray-500 flex-shrink-0 font-medium">
-                                        {formatTime(conv.last_message_at)}
+                                        {formatTime(conv.last_message_at ?? null)}
                                     </span>
                                 </div>
                                 <p className="text-sm text-gray-500 truncate mb-2">
@@ -159,7 +139,7 @@ export default function ConversationsList({ onSelectConversation, selectedId }: 
                                     >
                                         {getStatusLabel(conv.status)}
                                     </span>
-                                    {conv.unread_count > 0 && (
+                                    {(conv.unread_count ?? 0) > 0 && (
                                         <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-medium">
                                             {conv.unread_count}
                                         </span>
