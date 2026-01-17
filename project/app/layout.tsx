@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header';
 import VerticalNav from '@/components/VerticalNav';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
     title: 'YasoCRM',
@@ -18,7 +15,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="ar" dir="rtl">
-            <body className={`${inter.className} h-screen flex flex-col bg-gray-50 overflow-hidden`}>
+            <body className="h-screen flex flex-col bg-gray-50 overflow-hidden font-sans">
                 <Header />
                 <div className="flex-1 flex overflow-hidden relative">
                     <VerticalNav />
